@@ -1,0 +1,268 @@
+---
+title: "MÉTODOS DE QUADRATURA (M05)"
+author: "André Lessa Silva"
+
+output: 
+  rmdformats::robobook:
+  html_document:
+    highlight: tango
+    toc: true
+    number_sections: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+
+---
+
+De acordo com a introdução feita pelo Professor Gustavo Rocha, o termo quadratura se refere a encontrar quadrados cuja a área seja a mesma sob a curva de interesse.
+  
+No relatório apresento algumas versões de código no R para realizar o cálculo de integrais considerando a função densidade de probabilidade de uma distribuição *Exponencial(1)*.
+  
+* Informações úteis  
+  + $f(x) = \begin{cases}
+    \lambda e^{-\lambda x}, & \text{se } x \geq 0 \\
+    0, & \text{se } x < 0
+    \end{cases}$  
+  + Pacotes utilizados para elaboração do relatório: ``knitr``, `kableExtra`
+    
+```{r Carregamento de pacotes, message=FALSE, warning=FALSE, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(rstatix)
+library(tibble)
+```
+  
+    
+# APROXIMAÇÃO RETANGULAR  
+Baseado na equação abaixo, gerei três códigos no R para calcular a integral de uma distribuição *Exponencial(1)* com intervalo de integração indo de 1 até 3.  
+  
+  I<sub>R</sub> $= h \sum_{i=1}^{n} f\left(a + \frac{2i-1}{2}h\right)$, sendo $h = \frac{b-a}{n}$
+  
+O primeiro código é o mais básico, que fiz em aula e sem ter pensado em maneiras de diminuir erros como falta ou repetição de parênteses. Já o segundo código que fiz foi levando em consideração esses fatores. Por fim, o último é a forma geral, ou seja, a integral de uma exponencial com qualquer parâmetro para qualquer intervalo de integração.
+    
+## Código da aula
+Antes de usar o código abaixo é necessário declarar algum valor para n. Lembrando que n é o valor da quantidade de subintervalos entre os limites de integração 1 e 3. Durante a aula fizemos cálculos para *n=10*, *n=100*, *n=1.000*, *n=10.000* e *n=100.000*.
+```{r, eval=FALSE}
+i=1:n
+(2/n)*sum(exp(-(1+((2*i-1)/n))))
+```
+  
+## Código pós-aula
+A maneira de montar a segunda versão da aproximação retangular é útil por tornar mais fácil a leitura do código e também ajudar a reduzir os erros.Antes de usar o código abaixo é necessário declarar algum valor para *n*.
+```{r, eval=FALSE}
+i=1:n
+interno=exp(-(1+(2*i-1)/n))
+somatorio=sum(interno)
+(2/n)*somatorio
+```
+  
+## Forma geral
+Com a forma geral fica mais fácil de calcular a integral para diferente valores de subintervalos, n, com qualquer valor de parâmetro. As versões acima consideram apenas uma *Exponencial(1)* mas com a função "ir" consigo calcular integrais com diferentes limites de integração e com diversos parâmetros.
+    
+Aqui é importante lembrar de gerar **f(x)**, abaixo defino ela como **g**. A função **g** é o núcleo de uma função de densidade cuja distribuição é uma *Exponencial(1)*.
+```{r, eval=FALSE}
+g = function(x,z) {
+  return(exp(-x/z))
+}
+
+ir = function(a,b,n,f, ...) {
+  h=(b-a)/n
+  i=1:n
+  interno = a+((2*i-1)/2)*h
+  f_int = f(interno, ...)
+  somatorio = sum(f_int)
+  return(h*somatorio)
+}
+```
+    
+  
+    
+        
+# REGRA TRAPEZOIDAL
+A integração seguindo a regra trapezoidal segue o mesmo esquema da anterior, a diferença é a equação utilizada que é a descrita abaixo.
+
+  I<sub>T</sub> $= h \left( \frac{f(a)}{2} + \sum_{i=1}^{n-1} f(a+i \cdot h) + \frac{f(b)}{2} \right)$, sendo $h = \frac{b-a}{n}$
+  
+## Código da aula
+Antes de usar o código abaixo é necessário declarar algum valor para *n*.
+```{r, eval=FALSE}
+i=1:(n-1)
+(2/n)*(exp(-1)/2 + sum(exp(-(1+(2*i)/n))) + exp(-3)/2) 
+```
+  
+##  Código pós-aula
+Antes de usar o código abaixo é necessário declarar algum valor para *n*.
+```{r, eval=FALSE}
+i=1:(n-1)
+interno=exp(-(1+(2*i)/n))
+somatorio=sum(interno)
+(2/n)*(exp(-1)/2+somatorio+exp(-3)/2)
+```
+  
+## Forma geral
+```{r, eval=FALSE}
+g <- function(x,z) {
+  return(exp(-x/z))
+}
+
+it <- function(a,b,n,f, ...) {
+  h=(b-a)/n
+  fracao1=f(x=a,z=...)/2
+  i=1:(n-1)
+  somatorio=sum(f(a+i*h,z=...))
+  fracao2=f(x=b,z=...)/2
+  resultado=h*(fracao1+somatorio+fracao2)
+  return(resultado)
+}
+```
+  
+  
+  
+  
+# REGRA DE SIMPSON
+A integração seguindo a regra de Simpson segue o mesmo esquema das anteriores, a diferença é a equação utilizada que é a descrita abaixo.
+
+I<sub>S</sub> $= \frac{h}{3} \left( f(a) + 4 \sum_{i=1}^{\frac{n}{2}} f\left(a+(2i-1)h\right) + 2 \sum_{i=1}^{\left(\frac{n}{2}-1\right)} f\left(a+2ih\right) + f(b) \right)$
+, sendo $h = \frac{b-a}{n}$
+
+  
+## Código da aula
+Antes de usar o código abaixo é necessário declarar algum valor para *n*.
+```{r, eval=FALSE}
+i1=1:(n/2)
+i2=1:((n/2)-1)
+(2/(3*n))*(exp(-1) + 4*sum(exp(-(1+((2*i1-1)*(2/n)))))+2*sum(exp(-(1+(4*i2/n))))+exp(-3))
+```
+  
+## Código pós-aula  
+Antes de usar o código abaixo é necessário declarar algum valor para *n*.
+```{r, eval=FALSE}
+i1=1:(n/2)
+interno1=exp(-(1+((2*i1-1)*(2/n))))
+somatorio1=sum(interno1)
+i2=1:((n/2)-1)
+interno2=exp(-(1+(4*i2/n)))
+somatorio2=sum(interno2)
+(2/(3*n))*(exp(-1)+4*somatorio1+2*somatorio2+exp(-3))
+```
+  
+## Forma geral
+```{r, eval=FALSE}
+g <- function(x,z) {
+  return(exp(-x/z))
+}
+
+is <- function(a,b,n,f, ...) {
+  h=(b-a)/n
+  fracao=h/3
+  
+  i1=1:(n/2)
+  interno1=a+(2*i1-1)*h
+  f_interno1=f(x=interno1,z=...)
+  somatorio1=sum(f_interno1)
+  
+  i2=1:((n/2)-1)
+  interno2=a+(2*i2*h)
+  f_interno2=f(x=interno2,z=...)
+  somatorio2=sum(f_interno2)
+  
+  resultado=fracao*(f(x=a,z=...)+4*somatorio1+2*somatorio2+f(x=b,z=...))
+  return(resultado)
+}
+```
+
+
+
+# COMPARAÇÃO ENTRE MÉTODOS
+```{r rodar funções antes, echo=FALSE}
+g <- function(x,z) {
+  return(exp(-x/z))
+}
+
+ir = function(a,b,n,f, ...) {
+  h=(b-a)/n
+  i=1:n
+  interno = a+((2*i-1)/2)*h
+  f_int = f(interno, ...)
+  somatorio = sum(f_int)
+  return(h*somatorio)
+}
+
+
+it <- function(a,b,n,f, ...) {
+  h=(b-a)/n
+  fracao1=f(x=a,z=...)/2
+  i=1:(n-1)
+  somatorio=sum(f(a+i*h,z=...))
+  fracao2=f(x=b,z=...)/2
+  resultado=h*(fracao1+somatorio+fracao2)
+  return(resultado)
+}
+
+
+is <- function(a,b,n,f, ...) {
+  h=(b-a)/n
+  fracao=h/3
+  
+  i1=1:(n/2)
+  interno1=a+(2*i1-1)*h
+  f_interno1=f(x=interno1,z=...)
+  somatorio1=sum(f_interno1)
+  
+  i2=1:((n/2)-1)
+  interno2=a+(2*i2*h)
+  f_interno2=f(x=interno2,z=...)
+  somatorio2=sum(f_interno2)
+  
+  resultado=fracao*(f(x=a,z=...)+4*somatorio1+2*somatorio2+f(x=b,z=...))
+  return(resultado)
+}
+```
+
+```{r Gerar valores para preencher a tabela, echo=FALSE, results='hide', eval=TRUE}
+n_vetor <- c()
+for (i in 1:5) {
+  n_vetor[i] <- 10^(i)
+}
+n_vetor
+
+ir_vetor <- c()
+for (i in 1:5) {
+  ir_vetor[i] <- ir(a=1,b=3,n=10^(i),f=g,z=1)
+}
+ir_vetor
+
+it_vetor <- c()
+for (i in 1:5) {
+  it_vetor[i] <- it(a=1,b=3,n=10^(i),f=g,z=1)
+}
+it_vetor
+
+is_vetor <- c()
+for (i in 1:5) {
+  is_vetor[i] <- is(a=1,b=3,n=10^(i),f=g,z=1)
+}
+is_vetor
+
+metodos_quad <- data.frame(n_vetor,
+                           ir_vetor,
+                           it_vetor,
+                           is_vetor)
+```
+
+  
+```{r Tabela resumo, echo=FALSE, warning=FALSE}
+kable(metodos_quad,
+      format = "html",
+      row.names = TRUE,
+      col.names = c("Subintervalos", "Aprox. Retangular", "Regra Trapezoidal", "Regra de Simpson"),
+      align = "c",
+      format.args = list(big.mark = ".",  scientific = FALSE),
+      caption = NA) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = T,
+                font_size = 18) 
+
+```
+
